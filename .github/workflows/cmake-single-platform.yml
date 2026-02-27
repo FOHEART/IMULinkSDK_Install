@@ -9,30 +9,46 @@ on:
     branches: [ "main" ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  # Build both configurations to match typical local VS usage.
+  BUILD_TYPES: "Debug Release"
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. Use per-config directories under out/build/x64-<Config> on Windows.
-      run: cmake -B ${{github.workspace}}/out/build/x64-${{env.BUILD_TYPE}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    # If your local machine already has the SDK under out/install/*, CI won't.
+    # Restore it from an artifact (recommended) or unpack it from the repo.
+    # Option A (recommended): download a previously uploaded artifact named 'imulinksdk-install'.
+    - name: Download IMULinkSDK install layout (out/install)
+      uses: actions/download-artifact@v4
+      with:
+        name: imulinksdk-install
+        path: out/install
+      continue-on-error: true
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/out/build/x64-${{env.BUILD_TYPE}} --config ${{env.BUILD_TYPE}}
+    # Option B: unpack from repository if you commit a zip under sdk/ (adjust the path/name to your repo).
+    - name: Unpack IMULinkSDK from repository (fallback)
+      shell: pwsh
+      run: |
+        if (-not (Test-Path "${{ github.workspace }}\out\install")) {
+          Write-Host "out/install not found; expecting SDK package under sdk/. Skipping if not present."
+        }
+        $zip = Join-Path "${{ github.workspace }}" "sdk\imulinksdk-install.zip"
+        if ((-not (Test-Path "${{ github.workspace }}\out\install")) -and (Test-Path $zip)) {
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\out\install" | Out-Null
+          Expand-Archive -Path $zip -DestinationPath "${{ github.workspace }}\out\install" -Force
+        }
 
-    - name: Test
-      working-directory: ${{github.workspace}}/out/build/x64-${{env.BUILD_TYPE}}
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}}
+    - name: Configure/Build/Test (Debug, Release)
+      shell: pwsh
+      run: |
+        foreach ($cfg in $env:BUILD_TYPES.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)) {
+          $bdir = "${{ github.workspace }}\out\build\x64-$cfg"
+          cmake -S "${{ github.workspace }}" -B $bdir -DCMAKE_BUILD_TYPE=$cfg
+          cmake --build $bdir --config $cfg
+          ctest --test-dir $bdir -C $cfg
+        }
 
