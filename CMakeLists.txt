@@ -24,7 +24,14 @@ set(_IMULINK_INSTALL_ROOT "${CMAKE_SOURCE_DIR}/out/install")
 # - For single-config generators (Ninja), resolve at configure time.
 get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(_is_multi_config)
-  set(_IMULINK_CFG_SUBDIR "$<IF:$<CONFIG:Debug>,x64-debug,x64-release>")
+  # Prefer the matching lowercase folder, then capitalized, then fall back to the opposite config
+  set(_IMULINKSDK_CFG_DBG "$<IF:$<EXISTS:${_IMULINK_INSTALL_ROOT}/x64-debug>,${_IMULINK_INSTALL_ROOT}/x64-debug,$<IF:$<EXISTS:${_IMULINK_INSTALL_ROOT}/x64-Debug>,${_IMULINK_INSTALL_ROOT}/x64-Debug,${_IMULINK_INSTALL_ROOT}/x64-release>>")
+  set(_IMULINKSDK_CFG_REL "$<IF:$<EXISTS:${_IMULINK_INSTALL_ROOT}/x64-release>,${_IMULINK_INSTALL_ROOT}/x64-release,$<IF:$<EXISTS:${_IMULINK_INSTALL_ROOT}/x64-Release>,${_IMULINK_INSTALL_ROOT}/x64-Release,${_IMULINK_INSTALL_ROOT}/x64-debug>>")
+
+  # Provide generator-expression-aware include/lib/bin dirs
+  set(_IMULINKSDK_INCLUDE_DIR "$<IF:$<CONFIG:Debug>,${_IMULINKSDK_CFG_DBG},${_IMULINKSDK_CFG_REL}>")
+  set(_IMULINKSDK_LIB_DIR     "$<IF:$<CONFIG:Debug>,${_IMULINKSDK_CFG_DBG}/lib,${_IMULINKSDK_CFG_REL}/lib>")
+  set(_IMULINKSDK_BIN_DIR     "$<IF:$<CONFIG:Debug>,${_IMULINKSDK_CFG_DBG}/bin,${_IMULINKSDK_CFG_REL}/bin>")
 else()
   if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
@@ -35,28 +42,57 @@ else()
   else()
     set(_IMULINK_CFG_SUBDIR "x64-release")
   endif()
-endif()
 
-# IMPORTANT: For multi-config generators, do not fully materialize paths that
-# contain generator expressions in normal variables at configure time.
-set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}")
-set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}/lib")
-set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}/bin")
+  # For single-config generators, prefer matching folder, then try opposite config, then try capitalized forms.
+  if(EXISTS "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}")
+    set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}")
+    set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}/lib")
+    set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/${_IMULINK_CFG_SUBDIR}/bin")
+  else()
+    # Try the opposite config (debug vs release)
+    if(_bt_lc STREQUAL "debug")
+      if(EXISTS "${_IMULINK_INSTALL_ROOT}/x64-Release")
+        set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/x64-Release")
+        set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Release/lib")
+        set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Release/bin")
+      elseif(EXISTS "${_IMULINK_INSTALL_ROOT}/x64-release")
+        set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/x64-release")
+        set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/x64-release/lib")
+        set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/x64-release/bin")
+      else()
+        set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/x64-Debug")
+        set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Debug/lib")
+        set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Debug/bin")
+      endif()
+    else()
+      if(EXISTS "${_IMULINK_INSTALL_ROOT}/x64-debug")
+        set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/x64-debug")
+        set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/x64-debug/lib")
+        set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/x64-debug/bin")
+      elseif(EXISTS "${_IMULINK_INSTALL_ROOT}/x64-Debug")
+        set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/x64-Debug")
+        set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Debug/lib")
+        set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Debug/bin")
+      else()
+        set(_IMULINKSDK_INCLUDE_DIR "${_IMULINK_INSTALL_ROOT}/x64-Release")
+        set(_IMULINKSDK_LIB_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Release/lib")
+        set(_IMULINKSDK_BIN_DIR     "${_IMULINK_INSTALL_ROOT}/x64-Release/bin")
+      endif()
+    endif()
+  endif()
+endif()
 
 add_library(imuLinkSDK SHARED IMPORTED GLOBAL)
 
 # Configure imported locations per configuration for best VS compatibility.
 if(_is_multi_config)
-  set(_IMULINKSDK_CFG_DBG "${_IMULINK_INSTALL_ROOT}/x64-debug")
-  set(_IMULINKSDK_CFG_REL "${_IMULINK_INSTALL_ROOT}/x64-release")
-
   set_target_properties(imuLinkSDK PROPERTIES
     IMPORTED_CONFIGURATIONS "Debug;Release"
     IMPORTED_IMPLIB_DEBUG "${_IMULINKSDK_CFG_DBG}/lib/imuLinkSDK.lib"
     IMPORTED_LOCATION_DEBUG "${_IMULINKSDK_CFG_DBG}/bin/imuLinkSDK.dll"
     IMPORTED_IMPLIB_RELEASE "${_IMULINKSDK_CFG_REL}/lib/imuLinkSDK.lib"
     IMPORTED_LOCATION_RELEASE "${_IMULINKSDK_CFG_REL}/bin/imuLinkSDK.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${_IMULINK_INSTALL_ROOT}/$<IF:$<CONFIG:Debug>,x64-debug,x64-release>"
+    INTERFACE_INCLUDE_DIRECTORIES "${_IMULINKSDK_INCLUDE_DIR}"
   )
 else()
   set_target_properties(imuLinkSDK PROPERTIES
