@@ -5,11 +5,12 @@
 #include "imulinksdk_typedefs.h"
 #include <ostream>
 #include <iomanip>
+#include <algorithm>
 
-#/**
-# * @brief Ensure 1-byte packing for cross-platform binary compatibility.
-# * @brief-cn 保证 1 字节对齐以实现跨平台二进制兼容性。
-# */
+/**
+ * @brief Ensure 1-byte packing for cross-platform binary compatibility.
+ * @brief-cn 保证 1 字节对齐以实现跨平台二进制兼容性。
+ */
 #if defined(_MSC_VER)
 #pragma pack(push, 1)
 #elif defined(__GNUC__)
@@ -60,17 +61,31 @@ struct IMULinkFrame
    /** @brief Magnetometer in milli-Gauss / 磁力计，单位 mGauss */
    float mag_mGauss[3];
 
+   union
+   {
+      uint32_t statusWord;
+      struct
+      {
+         uint32_t CalibrationAccuracy : 2;
+         uint32_t _reserved : 30;
+      } statusBits;
+   } status;
+
    /** @brief Temperature in Celsius / 温度，单位摄氏度 */
    float temperature_C;
 };
 
 typedef struct IMULinkFrame IMULinkFrame;
 
+
+
+
+
 /**
  * @brief IMULinkSuitFrames represents a batch of frames for a suit update.
  * @brief-cn IMULinkSuitFrames：表示一次套装更新的帧集合。
  *
- * The array is ordered by KHS53_SkeletonIndex, containing one frame per sensor.
+ * The array is ordered in  KHS53_SkeletonIndex order, containing one frame per sensor.
  * / 数组按 KHS53_SkeletonIndex 顺序排列，每个传感器对应一帧数据。
  */
 struct IMULinkSuitFrames
@@ -111,6 +126,36 @@ typedef struct IMULinkSuitFrames IMULinkSuitFrames;
 #pragma pack(pop)
 
 /**
+ * @brief Initialize an IMULinkFrame by clearing all fields to zero.
+ * @brief-cn 初始化 IMULinkFrame：将所有成员清零。
+ */
+inline void InitIMULinkFrame(IMULinkFrame& f)
+{
+    f.suitNumber = 0;
+    f.skeletonIndex = static_cast<KHS53_SkeletonIndex>(0);
+    f.frameNumber = 0;
+    std::fill(std::begin(f.quat_wxyz), std::end(f.quat_wxyz), 0.0f);
+    std::fill(std::begin(f.accel_g), std::end(f.accel_g), 0.0f);
+    std::fill(std::begin(f.gyro_dps), std::end(f.gyro_dps), 0.0f);
+    std::fill(std::begin(f.mag_mGauss), std::end(f.mag_mGauss), 0.0f);
+    f.status.statusWord = 0;
+    f.temperature_C = 0.0f;
+}
+
+/**
+ * @brief Initialize an IMULinkSuitFrames by clearing all fields to zero.
+ * @brief-cn 初始化 IMULinkSuitFrames：将所有成员清零。
+ */
+inline void InitIMULinkSuitFrames(IMULinkSuitFrames& sf)
+{
+    sf.suitNumber = 0;
+    sf.frameCount = 0;
+    sf.userVar1 = nullptr;
+    sf.userVar2 = nullptr;
+    for (uint32_t i = 0; i < static_cast<uint32_t>(KHS53_Count); ++i)
+        InitIMULinkFrame(sf.rawFrames[i]);
+}
+/**
  * @brief Print all elements of an IMULinkFrame to the provided output stream.
  * @brief-cn 将 IMULinkFrame 的所有元素打印到提供的输出流。
  * @param os Output stream to write to. / 输出流。
@@ -118,13 +163,13 @@ typedef struct IMULinkSuitFrames IMULinkSuitFrames;
  */
 inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 {
-    os << "IMULinkFrame { ";
+   // os << "IMULinkFrame { ";
 
    /** 
    @brief Control whether to print suitNumber in hex /
    控制是否以十六进制打印 suitNumber 
    */
-    bool isPrintSuitNumber = true;
+    bool isPrintSuitNumber = false;
     if (isPrintSuitNumber)
     {
       /** @brief Save stream state / 保存流状态 */
@@ -141,9 +186,15 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
     }
 
    /** @brief Print sensor position / 打印传感器位置 */
-   os << KHS53_SkeletonIndexToStdString(f.skeletonIndex);
-
+	bool isPrintSkeletonIndex = true;
+    if (isPrintSkeletonIndex)
+    {
+		os << KHS53_SkeletonIndexToStdString(f.skeletonIndex);
+    }
+  
    /** @brief Print frame number / 打印帧序号 */
+   bool isPrintFrameNumber = false;
+   if (isPrintFrameNumber)
     {
         auto oldFlagsFrame = os.flags();
         os << ", frameNumber=" << std::dec << f.frameNumber;
@@ -151,7 +202,7 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
     }
 
    /** @brief Control whether to print quaternion / 控制是否打印四元数 */
-    bool isPrintQuat = true;
+    bool isPrintQuat = false;
     if (isPrintQuat)
     {
       /** @brief Save stream state / 保存流状态 */
@@ -196,7 +247,7 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
     }
 
    /** @brief Control whether to print gyroscope / 控制是否打印陀螺仪 */
-    bool isPrintGyro = false;
+    bool isPrintGyro = true;
     if (isPrintGyro)
     {
       /** @brief Save stream state / 保存流状态 */
@@ -242,12 +293,58 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 
    /** @brief Control whether to print temperature / 控制是否打印温度 */
    bool isPrintTemp = false;
-    if (isPrintTemp)
-    {
+   if (isPrintTemp)
+   {
       /** @brief Unit: Celsius / 单位：摄氏度 */
         os << ", temperature_C=" << f.temperature_C;
     }
-    os << " }\r\n";
+
+   /** @brief Control whether to print statusWord / 控制是否打印 statusWord */
+   bool isPrintStatusWord = true;
+   if (isPrintStatusWord)
+   {
+      auto oldFlagsStatus = os.flags();
+      os << ", statusWord=" << std::dec << f.status.statusWord;
+      os.flags(oldFlagsStatus);
+   }
+
+   os << " \r\n";
+}
+
+/**
+ * @brief Print IMULinkFrame as numeric-only CSV.
+ * @brief-cn 以仅包含数字的 CSV 格式打印 IMULinkFrame。
+ *
+ * Output columns:
+ * suitNumber,skeletonIndex,frameNumber,
+ * quat_w,quat_x,quat_y,quat_z,
+ * accel_x,accel_y,accel_z,
+ * gyro_x,gyro_y,gyro_z,
+ * mag_x,mag_y,mag_z,
+ * temperature_C
+ */
+inline void PrintIMULinkFrameCSV(std::ostream& os, const IMULinkFrame& f)
+{
+    auto oldFlags = os.flags();
+    auto oldPrec = os.precision();
+
+    os.setf(std::ios::fmtflags(0), std::ios::floatfield);
+    os << std::fixed << std::setprecision(6);
+
+    os << std::dec
+       // << f.suitNumber << ','
+       // << static_cast<uint32_t>(f.skeletonIndex) << ','
+       // << f.frameNumber << ','
+       << f.quat_wxyz[0] << ',' << f.quat_wxyz[1] << ',' << f.quat_wxyz[2] << ',' << f.quat_wxyz[3] << ','
+       << f.accel_g[0] << ',' << f.accel_g[1] << ',' << f.accel_g[2] << ','
+       << f.gyro_dps[0] << ',' << f.gyro_dps[1] << ',' << f.gyro_dps[2] << ','
+       // << f.mag_mGauss[0] << ',' << f.mag_mGauss[1] << ',' << f.mag_mGauss[2] << ','
+       // <<f.status.statusWord << ','
+       // << f.temperature_C
+       << "\n";
+
+    os.flags(oldFlags);
+    os.precision(oldPrec);
 }
 
 /**

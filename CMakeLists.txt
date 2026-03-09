@@ -7,10 +7,6 @@ project(${TARGET_NAME} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(MSVC)
-  add_compile_options(/utf-8)
-endif()
-
 if(NOT WIN32)
   message(FATAL_ERROR "This CMakeLists currently supports Windows layout of out/install/*")
 endif()
@@ -183,6 +179,7 @@ foreach(_src IN LISTS _example_cpp)
   target_link_libraries(${_name} PRIVATE imuLinkSDK)
 
   # Ensure source files are interpreted as UTF-8 by the compiler
+
 # - MSVC: use /utf-8
 # - GCC/Clang: use -finput-charset and -fexec-charset
 if (MSVC)

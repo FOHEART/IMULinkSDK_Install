@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file IMULinkSDK.h
  * @brief IMULinkSDK 公共 API 头文件
  * @brief Public API header for IMULinkSDK
@@ -11,12 +11,12 @@
 #include "IMULinkFrame.h"
 
 /**
- * @brief 返回 SDK 主版本号
- * @brief Returns the SDK major version number
+ * @brief 返回 SDK 版本号
+ * @brief Returns the SDK  version number
  *
- * @return 主版本号整数 / Major version number as integer
+ * @return 版本号 / Version number as integer
  */
-IMULINKSDK_DLL_API int imulinksdk_version_major(void);
+IMULINKSDK_DLL_API int imulinksdk_version(void);
 
 /**
  * @brief 初始化 SDK，开启 UDP 监听并启动帧处理线程

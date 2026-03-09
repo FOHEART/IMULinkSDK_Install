@@ -45,7 +45,7 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 		/** @brief Add example suit serial to the whitelist (e.g., 0x1403403E).
 		 *  @brief-cn 将示例套装序列号添加到白名单（例如 0x1403403E）。
 		 */
-		std::vector<unsigned int> whitelist = { 0x1403413E };
+		std::vector<unsigned int> whitelist = { 0x1403403E };
 		IMULinkSDK_AddToWhitelist(whitelist);
 
 		{

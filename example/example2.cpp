@@ -73,11 +73,13 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 					std::lock_guard<std::mutex> lock(printMutex);
 					for (auto itor = frames.begin(); itor != frames.end(); ++itor)
 					{
-						/** @brief Index within the suit frames to print (default head). / 要打印的索引（默认 头部）。 */
-						KHS53_SkeletonIndex printIndex = KHS53_Head;
+						/** @brief Index within the suit frames to print (default head). /
+						要打印的索引（默认 头部）。 
+						*/
+						KHS53_SkeletonIndex printIndex = KHS53_RightUpperLeg;
 
 						PrintIMULinkFrame(std::cout, itor->rawFrames[printIndex]);
-                        
+						//PrintIMULinkFrameCSV(std::cout, itor->rawFrames[printIndex]);
 					}
 				}
 
@@ -150,7 +152,8 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 	}
-
+	int v = imulinksdk_version();
+	std::cout << "imulinksdk_version=0x" << std::hex << v << std::dec << " (" << v << ")" << std::endl;
 	/** @brief Initialize global logger with timestamped filename to avoid conflicts. / 初始化全局日志，使用带时间戳的文件名以避免冲突。 */
 	if (!init_logger())
 	{
