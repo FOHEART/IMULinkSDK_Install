@@ -3,10 +3,12 @@
 
 #include <cstdint>
 #include "imulinksdk_typedefs.h"
+#include "imulinksdk_typesconfig.h"
+
 #include <ostream>
 #include <iomanip>
 #include <algorithm>
-//#include <xscommon/xsqeconverter.h>
+
 /**
  * @brief Ensure 1-byte packing for cross-platform binary compatibility.
  * @brief-cn 保证 1 字节对齐以实现跨平台二进制兼容性。
@@ -119,6 +121,8 @@ typedef struct IMULinkSuitFrames IMULinkSuitFrames;
 
 #pragma pack(pop)
 
+
+IMULINKSDK_DLL_API void QuatToEulerDegree(const float *quat_wxyz,unsigned int convAxisOrder, float *euler_deg);
 /**
  * @brief Initialize an IMULinkFrame by clearing all fields to zero.
  * @brief-cn 初始化 IMULinkFrame：将所有成员清零。
@@ -220,16 +224,14 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 		os << "]";
 	}
 
-#if 0
-	bool isPrintQuatEuler = false;
-	if (isPrintQuatEuler)
+	bool isPrintEuler = true;
+	if (isPrintEuler)
 	{
 		/* Convert quaternion to Euler angles (roll, pitch, yaw) in degrees */
 		float q_wxyz[4];
 		std::copy(std::begin(f.quat_wxyz), std::end(f.quat_wxyz), q_wxyz);
 		float euler[3];
-		xsQEConverter converter;
-		converter.QuatToEulerDegree(q_wxyz, 4, euler);
+		QuatToEulerDegree(q_wxyz, 4, euler);
 		/** @brief Save stream state / 保存流状态 */
 		auto oldFlagsEuler = os.flags();
 		auto oldPrecEuler = os.precision();
@@ -244,7 +246,6 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 		os << "]";
 
 	}
-#endif
 
 	/** @brief Control whether to print acceleration / 控制是否打印加速度 */
 	bool isPrintAccel = false;

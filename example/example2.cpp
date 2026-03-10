@@ -111,7 +111,7 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 	return ret;
 }
 
- 
+
 
 /**
  * @brief Print usage information for command-line options.

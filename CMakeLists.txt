@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Option to enable Python bindings (pybind11). Default is OFF.
-option(BUILD_PYTHON_BINDINGS "Enable building Python bindings (requires pybind11). Default: OFF" OFF)
+option(BUILD_PYTHON_BINDINGS "Enable building Python bindings (requires pybind11). Default: OFF" ON)
 
 if(BUILD_PYTHON_BINDINGS)
   find_package(pybind11 CONFIG QUIET)
