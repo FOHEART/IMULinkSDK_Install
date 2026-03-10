@@ -37,7 +37,7 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 		/** @brief Initialize the SDK and start the listener. / 初始化 SDK 并启动监听器。 */
 		int imuLinkRet = IMULinkSDK_Init();
 
-		
+
 
 		if (imuLinkRet != 0)
 		{
@@ -56,7 +56,8 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 		std::mutex printMutex;
 
 		auto pollStart = std::chrono::steady_clock::now();
-		std::thread pollThread([&]() {
+		std::thread pollThread([&]()
+		{
 			while (!stopPolling.load())
 			{
 				auto now = std::chrono::steady_clock::now();
@@ -66,7 +67,7 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 				}
 
 				std::vector<IMULinkSuitFrames> frames;
-				IMULinkSDK_GetSuitFrames(frames);
+				int framesCount= IMULinkSDK_GetSuitFrames(frames);
 
 				if (!frames.empty())
 				{
@@ -74,9 +75,9 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 					for (auto itor = frames.begin(); itor != frames.end(); ++itor)
 					{
 						/** @brief Index within the suit frames to print (default head). /
-						要打印的索引（默认 头部）。 
+						要打印的索引（默认 头部）。
 						*/
-						KHS53_SkeletonIndex printIndex = KHS53_RightUpperLeg;
+						KHS53_SkeletonIndex printIndex = KHS53_Head;
 
 						PrintIMULinkFrame(std::cout, itor->rawFrames[printIndex]);
 						//PrintIMULinkFrameCSV(std::cout, itor->rawFrames[printIndex]);
@@ -110,7 +111,7 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 	return ret;
 }
 
-
+ 
 
 /**
  * @brief Print usage information for command-line options.

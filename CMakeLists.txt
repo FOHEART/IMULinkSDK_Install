@@ -7,6 +7,22 @@ project(${TARGET_NAME} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Option to enable Python bindings (pybind11). Default is OFF.
+option(BUILD_PYTHON_BINDINGS "Enable building Python bindings (requires pybind11). Default: OFF" OFF)
+
+if(BUILD_PYTHON_BINDINGS)
+  find_package(pybind11 CONFIG QUIET)
+  if(NOT pybind11_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+      pybind11
+      GIT_REPOSITORY https://github.com/pybind/pybind11.git
+      GIT_TAG v2.13.6
+    )
+    FetchContent_MakeAvailable(pybind11)
+  endif()
+endif()
+
 if(NOT WIN32)
   message(FATAL_ERROR "This CMakeLists currently supports Windows layout of out/install/*")
 endif()
@@ -160,6 +176,43 @@ function(copy_imu_runtime_dlls target)
       "$<TARGET_FILE_DIR:${target}>/vcruntime140_1.dll"
   )
 endfunction()
+
+if(BUILD_PYTHON_BINDINGS)
+  pybind11_add_module(imulink_sdk_pybind MODULE
+    "${CMAKE_SOURCE_DIR}/python/imulink_sdk_pybind.cpp"
+  )
+
+  target_include_directories(imulink_sdk_pybind PRIVATE
+    "${CMAKE_SOURCE_DIR}"
+  )
+  target_link_libraries(imulink_sdk_pybind PRIVATE imuLinkSDK)
+
+  if(MSVC)
+    target_compile_options(imulink_sdk_pybind PRIVATE /utf-8)
+    target_compile_definitions(imulink_sdk_pybind PRIVATE _CRT_SECURE_NO_WARNINGS)
+  else()
+    target_compile_options(imulink_sdk_pybind PRIVATE -finput-charset=UTF-8 -fexec-charset=UTF-8)
+  endif()
+
+  set_target_properties(imulink_sdk_pybind PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+  )
+
+  if(_is_multi_config)
+    foreach(_cfg Debug Release RelWithDebInfo MinSizeRel)
+      string(TOUPPER "${_cfg}" _cfg_uc)
+      set_target_properties(imulink_sdk_pybind PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY_${_cfg_uc} "${CMAKE_BINARY_DIR}/python/${_cfg}"
+        RUNTIME_OUTPUT_DIRECTORY_${_cfg_uc} "${CMAKE_BINARY_DIR}/python/${_cfg}"
+      )
+    endforeach()
+  endif()
+
+  copy_imu_runtime_dlls(imulink_sdk_pybind)
+else()
+  message(STATUS "BUILD_PYTHON_BINDINGS is OFF — skipping pybind11/python module")
+endif()
 
 # Build each source file named example*.cpp as a separate exe
 file(GLOB _example_cpp CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/example/example*.cpp")
