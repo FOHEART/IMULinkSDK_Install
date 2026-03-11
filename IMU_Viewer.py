@@ -26,6 +26,12 @@ def _default_install_root() -> str:
 
 
 def _find_dll(install_root: str) -> str:
+    # PyInstaller 打包后 DLL 直接放在 _internal/（sys._MEIPASS）
+    if hasattr(sys, "_MEIPASS"):
+        meipass_dll = os.path.join(sys._MEIPASS, "imuLinkSDK.dll")
+        if os.path.isfile(meipass_dll):
+            return meipass_dll
+
     dll = os.path.join(install_root, "bin", "imuLinkSDK.dll")
     if os.path.isfile(dll):
         return dll
@@ -45,6 +51,10 @@ def _find_dll(install_root: str) -> str:
 
 
 def _register_module_search_paths(project_root: str) -> None:
+    # PyInstaller 打包后模块在 _internal/（sys._MEIPASS）
+    if hasattr(sys, "_MEIPASS") and sys._MEIPASS not in sys.path:
+        sys.path.insert(0, sys._MEIPASS)
+
     # Prefer local build outputs first so running this script after a build works directly.
     candidates = [
         os.path.join(project_root, "out", "build", "x64-Debug", "python"),
@@ -100,6 +110,7 @@ def main(argv: list[str]) -> int:
     if ret != 0:
         return ret
 
+    sdk.add_to_whitelist([0x1403413E])
     stop_event = threading.Event()
 
     # 共享四元数：[qw, qx, qy, qz]，由轮询线程写入，VTK 定时器读取
@@ -191,6 +202,20 @@ def main(argv: list[str]) -> int:
         ("胯",   "KHS53_Pelvis", 768 - 70),
         ("后背", "KHS53_T8",     768 - 100),
         ("头",   "KHS53_Head",   768 - 130),
+        ("左肩", "KHS53_LeftShoulder", 768 - 188),
+        ("左上臂", "KHS53_LeftUpperArm", 768 - 218),
+        ("左小臂", "KHS53_LeftForeArm", 768 - 248),
+        ("左手", "KHS53_LeftHand", 768 - 278),
+        ("右肩", "KHS53_RightShoulder", 768 - 336),
+        ("右上臂", "KHS53_RightUpperArm", 768 - 366),
+        ("右小臂", "KHS53_RightForeArm", 768 - 396),
+        ("右手", "KHS53_RightHand", 768 - 426),
+        ("左大腿", "KHS53_LeftUpperLeg", 768 - 484),
+        ("左小腿", "KHS53_LeftLowerLeg", 768 - 514),
+        ("左脚", "KHS53_LeftFoot", 768 - 544),
+        ("右大腿", "KHS53_RightUpperLeg", 768 - 602),
+        ("右小腿", "KHS53_RightLowerLeg", 768 - 632),
+        ("右脚", "KHS53_RightFoot", 768 - 662),
     ]
     _COLOR_ACTIVE   = (1.0, 0.85, 0.0)   # 黄色：当前选中
     _COLOR_INACTIVE = (0.7, 0.7, 0.7)    # 灰色：未选中
@@ -206,19 +231,22 @@ def main(argv: list[str]) -> int:
         actor.GetTextProperty().SetFontFamily(vtk.VTK_FONT_FILE)
         actor.GetTextProperty().SetFontFile(_FONT_PATH)
         is_active = (bone_name == skeletonForPrint[0])
+        actor.SetInput(f"-->[{label_text}]" if is_active else f"[{label_text}]")
         c = _COLOR_ACTIVE if is_active else _COLOR_INACTIVE
         actor.GetTextProperty().SetColor(*c)
         renderer.AddViewProp(actor)
-        btn_actors.append((actor, bone_name, y_pos))
+        btn_actors.append((actor, bone_name, label_text, y_pos))
 
     def _refresh_btn_colors():
-        for actor, bone_name, _ in btn_actors:
-            c = _COLOR_ACTIVE if bone_name == skeletonForPrint[0] else _COLOR_INACTIVE
+        for actor, bone_name, label_text, _ in btn_actors:
+            is_active = bone_name == skeletonForPrint[0]
+            actor.SetInput(f"-->[{label_text}]" if is_active else f"[{label_text}]")
+            c = _COLOR_ACTIVE if is_active else _COLOR_INACTIVE
             actor.GetTextProperty().SetColor(*c)
 
     def _on_left_click(obj, _event):
         x, y = obj.GetEventPosition()
-        for _actor, bone_name, y_pos in btn_actors:
+        for _, bone_name, _, y_pos in btn_actors:
             if _BTN_X <= x <= _BTN_X + _BTN_W and y_pos <= y <= y_pos + _BTN_H:
                 skeletonForPrint[0] = bone_name
                 _refresh_btn_colors()

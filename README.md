@@ -1,38 +1,20 @@
-# Windows Compile
+# IMULinkSDK 示例工程
 
-地址：git clone https://gitee.com/foheart_1_0/IMULinkSDK_Install.git
+IMULink 惯性动捕套装的 SDK 示例工程，包含 C++ 示例程序与 Python 3D 实时可视化查看器。
 
-## 编译Debug版本
+仓库地址：`git clone https://gitee.com/foheart_1_0/IMULinkSDK_Install.git`
 
-cmake -S . -B out/build/x64-Debug -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Debug"
+---
 
-cmake --build out/build/x64-Debug --config Debug
+## 功能概览
 
-## 编译Release版本
-
-cmake -S . -B out/build/x64-Release -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release"
-
-cmake --build out/build/x64-Release --config Release
-
-## 头文件
-
-## 库文件
-
-Debug版本
-
-out\install\x64-debug\bin\imuLinkSDK.dll
-
-out\install\x64-debug\lib\imuLinkSDK.lib
-
-Release版本
-
-out\install\x64-release\bin\imuLinkSDK.dll
-
-out\install\x64-release\lib\imuLinkSDK.lib
-
-## 中间文件
-
-中间文件在out/build文件夹下，编译错误时可以删除out/build文件夹重新编译。
+| 功能 | 说明 |
+|------|------|
+| SDK C++ 接口 | 初始化/关闭 SDK、获取套装帧数据、白名单/黑名单管理 |
+| Python 绑定 | 通过 pybind11 将 C++ SDK 暴露为 Python 模块 |
+| 3D 实时查看器 | VTK 渲染窗口实时展示单个骨骼节点的姿态（四元数 → 长方体旋转） |
+| 骨骼节点切换 | 窗口左上角点击按钮，切换当前显示的骨骼节点 |
+| 相机控制 | 轨迹球相机、按空格键重置视角 |
 
 ---
 
@@ -40,111 +22,285 @@ out\install\x64-release\lib\imuLinkSDK.lib
 
 ```
 IMULinkSDK_Install/
-├── IMU_Viewer.py              # 主入口：IMU 数据采集 + VTK 3D 实时可视化
-├── CMakeLists.txt             # CMake 构建脚本（含 pybind11 Python 绑定）
-├── example/                   # C++ 示例代码
-│   ├── example1.cpp / .h      # 基础用法示例
-│   ├── example2.cpp / .h      # 扩展用法示例
-│   ├── example_BlackList.cpp  # 黑名单过滤示例
-│   ├── example_WhiteList.cpp  # 白名单过滤示例
-│   └── Logger.cpp / .h        # 日志工具
-├── python/                    # Python 辅助模块与独立工具
-│   ├── imulink_sdk_pybind.cpp # pybind11 绑定源文件（编译为 .pyd）
-│   ├── IMU_3D_viewer.py       # 独立 3D 线段/长方体演示查看器
-│   ├── box_actor.py           # VTK 长方体 Actor 构建 & 四元数旋转
-│   ├── vtk_axes.py            # VTK 坐标轴 Actor 工具
-│   ├── camera_control.py      # 相机控制（空格键重置视角）
-│   ├── draw_lines.py          # VTK 连线/球体 Actor 工具
-│   └── print_help_message.py  # 操作提示打印
+├── CMakeLists.txt                  # CMake 构建配置
+├── CMakeSettings.json              # Visual Studio CMake 多配置设置
+├── IMU_Viewer.py                   # 主程序：Python 3D 实时查看器
+├── build_dist.cmd                  # 打包脚本（生成绿色可运行目录）
+├── setup_python_libs.cmd           # 安装 Python 依赖库脚本
+│
+├── example/                        # C++ 示例代码
+│   ├── example1.h                  # 基础数据获取示例
+│   ├── example2.h                  # 套装帧轮询示例（IMU_Viewer 使用此进程）
+│   ├── example_BlackList.h         # 黑名单过滤示例
+│   └── Logger.h / Logger.cpp       # 日志工具
+│
+├── python/                         # Python 辅助模块
+│   ├── imulink_sdk_pybind.cpp      # pybind11 绑定源码（编译为 .pyd）
+│   ├── box_actor.py                # VTK 长方体 Actor（四元数旋转）
+│   ├── camera_control.py           # 相机空格键重置绑定
+│   ├── vtk_axes.py                 # 坐标轴渲染
+│   ├── draw_lines.py               # 线段绘制工具
+│   ├── IMU_3D_viewer.py            # 独立 3D 查看器（不依赖 SDK，用于调试）
+│   └── print_help_message.py       # 帮助信息打印
+│
 ├── fonts/
-│   └── HarmonyOS_Sans_SC_Regular.ttf  # 中文字体（供 VTK 标签使用）
-├── libs/                      # 第三方 Python 依赖（PIL、pyparsing 等）
-├── spdlog/                    # spdlog 日志库头文件
-└── out/                       # CMake 构建输出（.dll / .lib / .pyd）
-    └── install/
-        ├── x64-debug/bin/imuLinkSDK.dll
-        ├── x64-debug/lib/imuLinkSDK.lib
-        ├── x64-release/bin/imuLinkSDK.dll
-        └── x64-release/lib/imuLinkSDK.lib
+│   └── HarmonyOS_Sans_SC_Regular.ttf   # 中文字体（VTK 文字渲染使用）
+│
+├── libs/                           # Python 依赖库（VTK、NumPy、Matplotlib 等）
+│   ├── vtk.py / vtkmodules/        # VTK Python 模块
+│   ├── vtk.libs/                   # VTK 依赖 DLL
+│   ├── numpy/                      # NumPy
+│   ├── matplotlib/                 # Matplotlib
+│   └── ...
+│
+├── out/
+│   ├── build/
+│   │   ├── x64-Debug/
+│   │   │   ├── example2.exe                        # 数据源进程
+│   │   │   ├── imuLinkSDK.dll
+│   │   │   └── python/imulink_sdk_pybind.*.pyd     # Python 扩展模块
+│   │   └── x64-Release/                            # Release 版本同上
+│   └── install/
+│       ├── x64-debug/
+│       │   ├── bin/imuLinkSDK.dll
+│       │   ├── lib/imuLinkSDK.lib
+│       │   └── include/                            # SDK 头文件
+│       └── x64-release/
+│           ├── bin/imuLinkSDK.dll
+│           ├── lib/imuLinkSDK.lib
+│           └── include/
+│
+└── spdlog/                         # spdlog 日志库头文件
 ```
 
 ---
 
-## Python 可视化功能说明
+## 构建步骤
 
-### IMU_Viewer.py
+### 前置条件
 
-主运行入口，集成 SDK 数据采集与 VTK 3D 实时姿态可视化。
+- Windows 10/11 x64
+- Visual Studio 2022（含 C++ 桌面开发组件）
+- CMake 3.20+
+- Python 3.14 x64（安装到 `C:\python\`）
 
-**运行方式：**
+### 1. 安装 Python 依赖
 
+```cmd
+setup_python_libs.cmd
 ```
-python IMU_Viewer.py [install_root]
+
+### 2. 编译 Debug 版本
+
+```cmd
+cmake -S . -B out/build/x64-Debug -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Debug"
+cmake --build out/build/x64-Debug --config Debug
 ```
 
-**功能：**
+### 3. 编译 Release 版本
 
-- 通过 `imulink_sdk_pybind`（pybind11 模块）初始化 IMULink SDK
-- 后台线程 `thread_poll_frame` 全速轮询 `sdk.get_suit_frames()`，获取指定骨骼节点（默认 `KHS53_T8`）的帧数据
-- 每帧提取加速度 (`accel_g`)、陀螺仪 (`gyro_dps`)、磁力计 (`mag_mgauss`)、四元数 (`quat_wxyz`)
-- 四元数通过共享变量传递给 VTK 主线程，驱动 3D 长方体实时旋转
-- VTK 场景：30×20×10mm 彩色长方体 + 坐标轴，~60fps 定时器刷新
-- 屏幕左上角显示当前 Suit 编号（16 进制格式，如 `Suit: 0x00000001`）
-- 空格键重置相机视角；鼠标左键旋转、右键缩放、中键平移
+```cmd
+cmake -S . -B out/build/x64-Release -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release"
+cmake --build out/build/x64-Release --config Release
+```
 
-**骨骼节点选择：**
+编译输出：
 
-修改 `IMU_Viewer.py` 中的 `skeletonForPrint` 变量可切换到其他骨骼节点（参考 `KHS53_SkeletonIndex` 枚举）。
-
-### python/IMU_3D_viewer.py
-
-独立的 VTK 3D 查看器，用于调试和演示，不依赖 SDK。
-
-**功能：**
-
-- 显示可配置的点组连线（`POINT_GROUPS`）
-- 定时器驱动长方体绕 Z 轴自动旋转演示
-- 支持鼠标交互（旋转/缩放/平移）、空格键重置视角
-
-### Python 模块依赖
-
-| 模块 | 说明 |
+| 文件 | 路径 |
 |------|------|
-| `vtk` | 3D 渲染（需系统安装） |
-| `imulink_sdk_pybind` | SDK Python 绑定（需先编译 CMake 目标） |
-| `libs/` | PIL、pyparsing 等本地第三方依赖 |
+| SDK DLL | `out/install/x64-debug/bin/imuLinkSDK.dll` |
+| SDK 静态库 | `out/install/x64-debug/lib/imuLinkSDK.lib` |
+| Python 扩展 | `out/build/x64-Debug/python/imulink_sdk_pybind.cp314-win_amd64.pyd` |
+| 示例程序 | `out/build/x64-Debug/example2.exe` |
+
+CMake 默认开启 `BUILD_PYTHON_BINDINGS=ON`，会自动下载 pybind11 v2.13.6（若系统未安装）。
+
+### 4. 运行查看器
+
+```cmd
+C:\python\python.exe IMU_Viewer.py
+```
+
+`IMU_Viewer.py` 启动时自动搜索 `out/build/` 下的 pybind 模块路径，无需手动设置 `PYTHONPATH`。
 
 ---
 
-## pybind11 Python 绑定编译
+## SDK 核心接口
 
-CMake 默认开启 `BUILD_PYTHON_BINDINGS=ON`，编译后生成：
-
-```
-out/build/x64-Debug/python/Debug/imulink_sdk_pybind.pyd
-```
-
-`IMU_Viewer.py` 启动时自动搜索该路径，无需手动配置 `PYTHONPATH`。
-
-**pybind11 暴露的 API：**
+### C++ 接口（`IMULinkSDK.h`）
 
 | 函数 | 说明 |
 |------|------|
-| `sdk.version()` | 返回 SDK 版本字符串 |
-| `sdk.init()` | 初始化 SDK，返回 0 表示成功 |
-| `sdk.get_suit_frames()` | 获取所有 Suit 的最新帧列表 |
-| `sdk.close()` | 关闭 SDK |
+| `imulinksdk_version()` | 返回 SDK 版本号 |
+| `IMULinkSDK_Init()` | 初始化 SDK，返回 0 表示成功 |
+| `IMULinkSDK_Close()` | 关闭 SDK |
+| `IMULinkSDK_GetSuitFrames(frames)` | 获取所有在线套装的当前帧数据 |
+| `IMULinkSDK_AddToWhitelist(suits)` | 将指定序列号加入白名单 |
+| `IMULinkSDK_AddToBlacklist(suits)` | 将指定序列号加入黑名单 |
 
-**帧数据字段（`frame` 字典）：**
+### Python 绑定接口（`imulink_sdk_pybind`）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `suit_number` | int | Suit 设备编号 |
-| `skeleton_index` | int | 骨骼索引 |
-| `frame_number` | int | 帧序号 |
-| `quat_wxyz` | tuple(4) | 四元数 (w, x, y, z) |
-| `accel_g` | tuple(3) | 加速度，单位 g |
-| `gyro_dps` | tuple(3) | 角速度，单位 dps |
-| `mag_mgauss` | tuple(3) | 磁力计，单位 mGauss |
-| `status_word` | int | 状态字 |
-| `temperature_c` | float | 温度，单位 °C |
+```python
+import imulink_sdk_pybind as sdk
+
+sdk.version()                         # 返回版本号
+sdk.init()                            # 初始化，返回 0 表示成功
+sdk.close()                           # 关闭
+sdk.get_suit_frames()                 # 返回套装帧数据列表
+sdk.add_to_whitelist([0x1403413E])    # 白名单过滤
+sdk.add_to_blacklist([0x1403413E])    # 黑名单过滤
+```
+
+`get_suit_frames()` 返回格式：
+
+```python
+[
+    {
+        "suit_number": 0x1403413E,
+        "frames": [
+            {
+                "skeleton_index": 0,        # KHS53_SkeletonIndex 枚举值
+                "frame_number":   42,
+                "quat_wxyz":      (w, x, y, z),
+                "accel_g":        (ax, ay, az),   # 加速度，单位 g
+                "gyro_dps":       (gx, gy, gz),   # 角速度，单位 deg/s
+                "mag_mgauss":     (mx, my, mz),   # 磁力计，单位 mGauss
+                "status_word":    0,
+                "temperature_c":  25.0,            # 温度，单位 °C
+            },
+            # ... 共 KHS53_Count 个节点
+        ]
+    }
+]
+```
+
+### 骨骼节点枚举（`KHS53_SkeletonIndex`，共 53 个节点）
+
+| 区域 | 节点 |
+|------|------|
+| 躯干 | Pelvis, L5, L3, T12, T8, Neck, Head |
+| 右臂 | RightShoulder, RightUpperArm, RightForeArm, RightHand |
+| 右手指 | RightHandThumb1~3, Index1~3, Middle1~3, Ring1~3, Pinky1~3 |
+| 左臂 | LeftShoulder, LeftUpperArm, LeftForeArm, LeftHand |
+| 左手指 | LeftHandThumb1~3, Index1~3, Middle1~3, Ring1~3, Pinky1~3 |
+| 右腿 | RightUpperLeg, RightLowerLeg, RightFoot, RightToe |
+| 左腿 | LeftUpperLeg, LeftLowerLeg, LeftFoot, LeftToe |
+
+---
+
+## IMU_Viewer.py — 3D 实时查看器
+
+### 窗口操作
+
+| 操作 | 功能 |
+|------|------|
+| 鼠标左键拖拽 | 旋转相机（轨迹球模式） |
+| 鼠标右键拖拽 | 缩放 |
+| 鼠标中键拖拽 | 平移 |
+| 空格键 | 重置相机到初始视角 |
+| 左上角按钮点击 | 切换显示的骨骼节点 |
+| 关闭窗口 | 退出程序 |
+
+### 骨骼节点按钮（左上角，从上到下）
+
+当前选中节点显示为**黄色**并带 `-->` 前缀，未选中为灰色。
+
+```
+-->[胯]        KHS53_Pelvis
+  [后背]       KHS53_T8
+  [头]         KHS53_Head
+               ← 空隙
+  [左肩]       KHS53_LeftShoulder
+  [左上臂]     KHS53_LeftUpperArm
+  [左小臂]     KHS53_LeftForeArm
+  [左手]       KHS53_LeftHand
+               ← 空隙
+  [右肩]       KHS53_RightShoulder
+  [右上臂]     KHS53_RightUpperArm
+  [右小臂]     KHS53_RightForeArm
+  [右手]       KHS53_RightHand
+               ← 空隙
+  [左大腿]     KHS53_LeftUpperLeg
+  [左小腿]     KHS53_LeftLowerLeg
+  [左脚]       KHS53_LeftFoot
+               ← 空隙
+  [右大腿]     KHS53_RightUpperLeg
+  [右小腿]     KHS53_RightLowerLeg
+  [右脚]       KHS53_RightFoot
+```
+
+### 数据流
+
+```
+IMU 套装
+   │  UDP 数据包（端口 5010）
+   ▼
+example2.exe（SocketListener）
+   │  内部 IPC
+   ▼
+imuLinkSDK.dll  →  IMULinkSDK_GetSuitFrames()
+   │
+   ▼
+imulink_sdk_pybind.pyd  →  sdk.get_suit_frames()
+   │
+   ▼
+thread_poll_frame（后台线程）  →  写入共享四元数 _current_quat[4]
+   │
+   ▼
+_on_timer（VTK 定时器，16ms / ~60 fps）  →  set_box_quaternion()
+   │
+   ▼
+VTK 渲染窗口（3D 长方体实时姿态显示）
+```
+
+---
+
+## 打包为可执行 EXE（PyInstaller）
+
+使用 PyInstaller 将 `IMU_Viewer.py` 打包为独立的 `IMU_Viewer.exe`，用户无需安装 Python 即可运行。
+
+### 前置条件
+
+- Python 3.14 x64 安装在 `C:\python\`
+- PyInstaller 已安装（`C:\python\python.exe -m pip install pyinstaller`）
+- CMake 工程已编译（存在 `out/build/x64-Debug/python/imulink_sdk_pybind*.pyd`）
+
+### 打包步骤
+
+直接双击运行：
+
+```cmd
+build_dist.cmd
+```
+
+脚本会自动完成以下操作：
+1. 检查 Python、PyInstaller、pybind 模块是否就绪
+2. 执行 `python -m PyInstaller IMU_Viewer.spec --noconfirm`
+3. 打包完成后提示输出路径
+
+### 输出结果
+
+```
+dist\IMU_Viewer\
+├── IMU_Viewer.exe        ← 启动文件（双击运行）
+└── _internal\            ← 所有依赖（VTK DLL、pyd、字体、SDK 等，勿删除）
+```
+
+将整个 `dist\IMU_Viewer\` 文件夹复制到目标机器，双击 `IMU_Viewer.exe` 即可运行。
+
+### 打包说明文件
+
+| 文件 | 说明 |
+|------|------|
+| `IMU_Viewer.spec` | PyInstaller spec 配置文件，控制打包内容 |
+| `build_dist.cmd` | 一键打包脚本 |
+| `build\IMU_Viewer\` | PyInstaller 中间文件，可删除后重新打包 |
+| `dist\IMU_Viewer\` | 打包输出目录 |
+
+> **注意**：`_internal\` 目录与 `IMU_Viewer.exe` 必须保持在同一文件夹下，不可单独移动 exe 文件。
+
+---
+
+## 中间文件说明
+
+编译中间文件位于 `out/build/`，编译出错时可删除该目录后重新编译。

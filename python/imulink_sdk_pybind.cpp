@@ -70,4 +70,12 @@ PYBIND11_MODULE(imulink_sdk_pybind, m)
         std::vector<IMULinkSuitFrames> frames;
         return IMULinkSDK_GetSuitFrames(frames);
     }, "Call IMULinkSDK_GetSuitFrames and return suit count");
+
+    m.def("add_to_whitelist", [](const std::vector<unsigned int>& suitNumbers) {
+        return IMULinkSDK_AddToWhitelist(suitNumbers);
+    }, "Add suit serial numbers to the whitelist");
+
+    m.def("add_to_blacklist", [](const std::vector<unsigned int>& suitNumbers) {
+        return IMULinkSDK_AddToBlacklist(suitNumbers);
+    }, "Add suit serial numbers to the blacklist");
 }

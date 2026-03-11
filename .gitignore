@@ -30,6 +30,7 @@ CMakeTmp/
 
 # Preset/build output used by project
 /out/build/
+/dist/
 ${PROJECT_BINARY_DIR}/
 build/
 cmake-build-*/

@@ -1,8 +1,8 @@
-﻿cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION 3.15)
 
 set(TARGET_NAME "IMULinkSDK_Examples")
 
-project(${TARGET_NAME} LANGUAGES CXX)
+project(${TARGET_NAME} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

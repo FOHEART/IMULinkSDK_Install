@@ -37,7 +37,10 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 		/** @brief Initialize the SDK and start the listener. / 初始化 SDK 并启动监听器。 */
 		int imuLinkRet = IMULinkSDK_Init();
 
-
+#if 0
+		std::vector<unsigned int> whitelist = { 0x1403413E };
+		IMULinkSDK_AddToWhitelist(whitelist);
+#endif
 
 		if (imuLinkRet != 0)
 		{
@@ -77,7 +80,7 @@ static int IMULinkSDK_openCloseLoopTest(int testRound)
 						/** @brief Index within the suit frames to print (default head). /
 						要打印的索引（默认 头部）。
 						*/
-						KHS53_SkeletonIndex printIndex = KHS53_Head;
+						KHS53_SkeletonIndex printIndex = KHS53_LeftHand;
 
 						PrintIMULinkFrame(std::cout, itor->rawFrames[printIndex]);
 						//PrintIMULinkFrameCSV(std::cout, itor->rawFrames[printIndex]);

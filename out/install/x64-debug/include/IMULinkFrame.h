@@ -54,6 +54,11 @@ struct IMULinkFrame
 	*/
 	float quat_wxyz[4];
 
+	/** @brief Euler angles in degrees, converted from the quaternion. 
+	* 默认转换顺序ZXY
+	/ 欧拉角，单位度，由四元数转换而来。 */
+	float euler_convFromQuat_deg[3];
+
 	/** @brief Acceleration in g / 加速度，单位 g */
 	float accel_g[3];
 
@@ -78,9 +83,6 @@ struct IMULinkFrame
 };
 
 typedef struct IMULinkFrame IMULinkFrame;
-
-
-
 
 
 /**
@@ -121,7 +123,33 @@ typedef struct IMULinkSuitFrames IMULinkSuitFrames;
 
 #pragma pack(pop)
 
-
+/**
+ * @brief Convert quaternion to Euler angles in degrees.
+ * @brief-cn 将四元数转换为以度为单位的欧拉角。
+ *
+ * @param quat_wxyz Pointer to quaternion components in the order {w, x, y, z}.
+ *                    指向按顺序 {w, x, y, z} 存放的四元数分量。
+ * @param convAxisOrder Conversion axis order or convention selector used by the implementation.
+ *                      0: XYZ Conversion Order
+ *                      1: XZY Conversion Order
+ *                      2: YXZ Conversion Order
+ *                      3: YZX Conversion Order
+ *                      4: ZXY Conversion Order(Default)
+ *                      5: ZYX Conversion Order
+ *                      Common callers may pass a small integer selecting rotation order or axis convention.
+ *                      该参数为实现指定的旋转轴顺序或约定选择器。常见调用方可传入小范围整数以选择旋转顺序或轴约定。
+ *                      Exact encoding of this value is implementation-defined; consult the source
+ *                      if specific behaviour is required.
+ *                      此值的具体编码由实现决定；如需确定行为，请查看实现源码。
+ * @param euler_deg Out parameter. Pointer to an array of three floats that will receive the
+ *                  Euler angles in degrees. The values are placed in the order [roll, pitch, yaw]
+ *                  representing rotations about the X, Y and Z axes respectively.
+ *                  输出参数，指向长度至少为 3 的 float 数组，函数返回时将存放以度为单位的欧拉角。
+ *                  顺序为 [roll, pitch, yaw]，分别对应绕 X、Y、Z 轴的旋转。
+ *
+ * @note Inputs must be valid pointers; behaviour is undefined for null pointers.
+ *       输入指针必须有效；对空指针的行为未定义。
+ */
 IMULINKSDK_DLL_API void QuatToEulerDegree(const float *quat_wxyz,unsigned int convAxisOrder, float *euler_deg);
 /**
  * @brief Initialize an IMULinkFrame by clearing all fields to zero.
@@ -132,7 +160,11 @@ inline void InitIMULinkFrame(IMULinkFrame& f)
 	f.suitNumber = 0;
 	f.skeletonIndex = static_cast<KHS53_SkeletonIndex>(0);
 	f.frameNumber = 0;
-	std::fill(std::begin(f.quat_wxyz), std::end(f.quat_wxyz), 0.0f);
+	f.quat_wxyz[0] = 1.0f; // Identity quaternion (w=1, x=0, y=0, z=0)
+	f.quat_wxyz[1] = 0.0f;
+	f.quat_wxyz[2] = 0.0f;
+	f.quat_wxyz[3] = 0.0f;
+	std::fill(std::begin(f.euler_convFromQuat_deg), std::end(f.euler_convFromQuat_deg), 0.0f);
 	std::fill(std::begin(f.accel_g), std::end(f.accel_g), 0.0f);
 	std::fill(std::begin(f.gyro_dps), std::end(f.gyro_dps), 0.0f);
 	std::fill(std::begin(f.mag_mGauss), std::end(f.mag_mGauss), 0.0f);
@@ -186,14 +218,14 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 	}
 
 	/** @brief Print sensor position / 打印传感器位置 */
-	bool isPrintSkeletonIndex = false;
+	bool isPrintSkeletonIndex = true;
 	if (isPrintSkeletonIndex)
 	{
 		os << KHS53_SkeletonIndexToStdString(f.skeletonIndex);
 	}
 
 	/** @brief Print frame number / 打印帧序号 */
-	bool isPrintFrameNumber = false;
+	bool isPrintFrameNumber = true;
 	if (isPrintFrameNumber)
 	{
 		auto oldFlagsFrame = os.flags();
@@ -224,14 +256,18 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 		os << "]";
 	}
 
-	bool isPrintEuler = true;
+	bool isPrintEuler = false;
 	if (isPrintEuler)
 	{
 		/* Convert quaternion to Euler angles (roll, pitch, yaw) in degrees */
-		float q_wxyz[4];
-		std::copy(std::begin(f.quat_wxyz), std::end(f.quat_wxyz), q_wxyz);
+		//float q_wxyz[4];
+		//std::copy(std::begin(f.quat_wxyz), std::end(f.quat_wxyz), q_wxyz);
 		float euler[3];
-		QuatToEulerDegree(q_wxyz, 4, euler);
+		
+		//QuatToEulerDegree(q_wxyz, 4, euler);
+		euler[0] = f.euler_convFromQuat_deg[0];
+		euler[1] = f.euler_convFromQuat_deg[1];
+		euler[2] = f.euler_convFromQuat_deg[2];
 		/** @brief Save stream state / 保存流状态 */
 		auto oldFlagsEuler = os.flags();
 		auto oldPrecEuler = os.precision();
@@ -248,7 +284,7 @@ inline void PrintIMULinkFrame(std::ostream& os, const IMULinkFrame& f)
 	}
 
 	/** @brief Control whether to print acceleration / 控制是否打印加速度 */
-	bool isPrintAccel = false;
+	bool isPrintAccel = true;
 	if (isPrintAccel)
 	{
 		/** @brief Save stream state / 保存流状态 */

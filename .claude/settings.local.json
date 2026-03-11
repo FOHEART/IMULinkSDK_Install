@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/python/python.exe -c \"import vtk; import os; print\\(os.path.dirname\\(vtk.__file__\\)\\)\")",
+      "Bash(C:/python/python.exe -c \"import sys; print\\(sys.version\\); print\\(sys.path\\)\")",
+      "Bash(C:/python/python.exe -m pip show pyinstaller)",
+      "Bash(C:/python/python.exe -c \"import pyinstaller; print\\(pyinstaller.__version__\\)\")",
+      "Bash(C:/python/python.exe -c \"import PyInstaller; print\\(PyInstaller.__version__\\)\")",
+      "Bash(C:/python/python.exe -m PyInstaller IMU_Viewer.spec --noconfirm)",
+      "WebFetch(domain:v2.gost.run)"
+    ]
+  }
+}
