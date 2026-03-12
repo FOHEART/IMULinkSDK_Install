@@ -20,7 +20,8 @@
       "Bash(ldd out/build/linux-Debug/python/imulink_sdk_pybind.cpython-310-x86_64-linux-gnu.so)",
       "Bash(chmod +x /home/doro/Documents/IMULinkSDK_Install/setup_python_libs.sh)",
       "Bash(pip3 index:*)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(chmod +x \"/home/doro/Documents/IMULinkSDK_Install/[Linux]open_in_vscode.sh\")"
     ]
   }
 }
