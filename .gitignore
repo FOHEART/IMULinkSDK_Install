@@ -47,7 +47,7 @@ build.ninja
 *.la
 *.al
 *.a
-*.so
+#*.so
 *.dylib
 *.exe
 *.pdb

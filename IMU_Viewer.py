@@ -22,31 +22,54 @@ def _default_project_root() -> str:
 
 def _default_install_root() -> str:
     here = _default_project_root()
-    return os.path.join(here, "out", "install", "x64-debug")
+    if sys.platform.startswith("win"):
+        return os.path.join(here, "out", "install", "x64-debug")
+    else:
+        return os.path.join(here, "out", "install", "linux-Release")
 
 
 def _find_dll(install_root: str) -> str:
-    # PyInstaller 打包后 DLL 直接放在 _internal/（sys._MEIPASS）
-    if hasattr(sys, "_MEIPASS"):
-        meipass_dll = os.path.join(sys._MEIPASS, "imuLinkSDK.dll")
-        if os.path.isfile(meipass_dll):
-            return meipass_dll
+    if sys.platform.startswith("win"):
+        lib_name = "imuLinkSDK.dll"
+        # PyInstaller 打包后 DLL 直接放在 _internal/（sys._MEIPASS）
+        if hasattr(sys, "_MEIPASS"):
+            meipass_dll = os.path.join(sys._MEIPASS, lib_name)
+            if os.path.isfile(meipass_dll):
+                return meipass_dll
 
-    dll = os.path.join(install_root, "bin", "imuLinkSDK.dll")
-    if os.path.isfile(dll):
-        return dll
+        dll = os.path.join(install_root, "bin", lib_name)
+        if os.path.isfile(dll):
+            return dll
 
-    # Fallbacks for alternate folder casing/layout.
-    candidates = [
-        os.path.join(os.path.dirname(install_root), "x64-Debug", "bin", "imuLinkSDK.dll"),
-        os.path.join(os.path.dirname(install_root), "x64-Release", "bin", "imuLinkSDK.dll"),
-    ]
+        # Fallbacks for alternate folder casing/layout.
+        candidates = [
+            os.path.join(os.path.dirname(install_root), "x64-Debug", "bin", lib_name),
+            os.path.join(os.path.dirname(install_root), "x64-Release", "bin", lib_name),
+        ]
+    else:
+        lib_name = "libimuLinkSDK.so"
+        # PyInstaller 打包后 .so 直接放在 _internal/（sys._MEIPASS）
+        if hasattr(sys, "_MEIPASS"):
+            meipass_so = os.path.join(sys._MEIPASS, lib_name)
+            if os.path.isfile(meipass_so):
+                return meipass_so
+
+        dll = os.path.join(install_root, "lib", lib_name)
+        if os.path.isfile(dll):
+            return dll
+
+        # Fallbacks for alternate folder casing/layout.
+        candidates = [
+            os.path.join(os.path.dirname(install_root), "linux-Debug",   "lib", lib_name),
+            os.path.join(os.path.dirname(install_root), "linux-Release",  "lib", lib_name),
+        ]
+
     for c in candidates:
         if os.path.isfile(c):
             return c
 
     raise FileNotFoundError(
-        "Could not find imuLinkSDK.dll. Looked in: \n  - " + "\n  - ".join([dll] + candidates)
+        f"Could not find {lib_name}. Looked in: \n  - " + "\n  - ".join([dll] + candidates)
     )
 
 
@@ -56,13 +79,22 @@ def _register_module_search_paths(project_root: str) -> None:
         sys.path.insert(0, sys._MEIPASS)
 
     # Prefer local build outputs first so running this script after a build works directly.
-    candidates = [
-        os.path.join(project_root, "out", "build", "x64-Debug", "python"),
-        os.path.join(project_root, "out", "build", "x64-Release", "python"),
-        os.path.join(project_root, "out", "build", "x64-debug", "python"),
-        os.path.join(project_root, "out", "build", "x64-release", "python"),
-        os.path.join(project_root, "build", "python"),
-    ]
+    if sys.platform.startswith("win"):
+        candidates = [
+            os.path.join(project_root, "out", "build", "x64-Debug", "python"),
+            os.path.join(project_root, "out", "build", "x64-Release", "python"),
+            os.path.join(project_root, "out", "build", "x64-debug", "python"),
+            os.path.join(project_root, "out", "build", "x64-release", "python"),
+            os.path.join(project_root, "build", "python"),
+        ]
+    else:
+        candidates = [
+            os.path.join(project_root, "out", "build", "linux-Debug", "python"),
+            os.path.join(project_root, "out", "build", "linux-Release", "python"),
+            os.path.join(project_root, "out", "build", "linux-debug", "python"),
+            os.path.join(project_root, "out", "build", "linux-release", "python"),
+            os.path.join(project_root, "build", "python"),
+        ]
 
     for path in candidates:
         if not os.path.isdir(path):
@@ -94,10 +126,16 @@ def main(argv: list[str]) -> int:
     install_root = argv[1] if len(argv) > 1 else _default_install_root()
     dll_path = _find_dll(install_root)
 
-    # Ensure the dependent runtime DLLs living next to imuLinkSDK.dll can be located.
+    # Ensure the dependent runtime libraries living next to the SDK can be located.
     dll_dir = os.path.dirname(dll_path)
     if sys.platform.startswith("win") and hasattr(os, "add_dll_directory"):
         os.add_dll_directory(dll_dir)
+    elif not sys.platform.startswith("win"):
+        # On Linux, prepend the .so directory to LD_LIBRARY_PATH so that
+        # ctypes / the dynamic linker can find libimuLinkSDK.so at import time.
+        ld_path = os.environ.get("LD_LIBRARY_PATH", "")
+        if dll_dir not in ld_path.split(os.pathsep):
+            os.environ["LD_LIBRARY_PATH"] = dll_dir + (os.pathsep + ld_path if ld_path else "")
 
     _register_module_search_paths(project_root)
     sdk = _import_bindings()
@@ -110,7 +148,7 @@ def main(argv: list[str]) -> int:
     if ret != 0:
         return ret
 
-    sdk.add_to_whitelist([0x1403413E])
+    sdk.add_to_whitelist([0x1403403E])
     stop_event = threading.Event()
 
     # 共享四元数：[qw, qx, qy, qz]，由轮询线程写入，VTK 定时器读取

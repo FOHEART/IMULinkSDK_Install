@@ -83,7 +83,7 @@ IMULinkSDK_Install/
 - Visual Studio 2022（含 C++ 桌面开发组件）
 - CMake 3.20+
 - Python 3.14 x64（安装到 `C:\python\`）
-
+- Ubuntu下单独安装：sudo apt-get install -y python3-dev 
 ### 1. 安装 Python 依赖
 
 ```cmd

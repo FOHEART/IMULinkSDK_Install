@@ -7,7 +7,20 @@
       "Bash(C:/python/python.exe -c \"import pyinstaller; print\\(pyinstaller.__version__\\)\")",
       "Bash(C:/python/python.exe -c \"import PyInstaller; print\\(PyInstaller.__version__\\)\")",
       "Bash(C:/python/python.exe -m PyInstaller IMU_Viewer.spec --noconfirm)",
-      "WebFetch(domain:v2.gost.run)"
+      "WebFetch(domain:v2.gost.run)",
+      "Bash(cmake -S . -B out/build/linux-Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_PYTHON_BINDINGS=ON)",
+      "Bash(cmake --build out/build/linux-Debug)",
+      "Bash(ls /home/doro/Documents/IMULinkSDK_Install/example/*.cpp)",
+      "Bash(dpkg -l python3-dev)",
+      "Read(//usr/include/**)",
+      "Bash(sudo apt-get:*)",
+      "Bash(cmake -S . -B out/build/linux-Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_PYTHON_BINDINGS=OFF)",
+      "Bash(cmake -S . -B out/build/linux-Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_BINDINGS=OFF)",
+      "Bash(cmake --build out/build/linux-Release)",
+      "Bash(ldd out/build/linux-Debug/python/imulink_sdk_pybind.cpython-310-x86_64-linux-gnu.so)",
+      "Bash(chmod +x /home/doro/Documents/IMULinkSDK_Install/setup_python_libs.sh)",
+      "Bash(pip3 index:*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }
