@@ -3,48 +3,48 @@ chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 :: ============================================================
-::  build_dist.cmd  —  使用 PyInstaller 打包 IMU_Viewer.exe
+::  build_dist.cmd  -  Package IMU_Viewer.exe with PyInstaller
 ::
-::  输出目录：dist\IMU_Viewer\IMU_Viewer.exe
+::  Output: dist\IMU_Viewer\IMU_Viewer.exe
 ::
-::  依赖：
-::    - Python 3.14 x64 安装在 C:\python\
-::    - 已安装 PyInstaller：C:\python\python.exe -m pip install pyinstaller
-::    - 已编译 CMake 工程（x64-Debug 或 x64-Release）
+::  Requirements:
+::    - Python 3.14 x64 installed at C:\python\
+::    - PyInstaller installed: C:\python\python.exe -m pip install pyinstaller
+::    - CMake project built (x64-Debug or x64-Release)
 :: ============================================================
 
 set SCRIPT_DIR=%~dp0
 set PYTHON=C:\python\python.exe
 set SPEC=%SCRIPT_DIR%IMU_Viewer.spec
 
-:: ── 检查 Python ──
+:: ── Check Python ──
 if not exist "%PYTHON%" (
-    echo [ERROR] 未找到 Python：%PYTHON%
-    echo 请将 Python 3.14 x64 安装到 C:\python\
+    echo [ERROR] Python not found: %PYTHON%
+    echo Please install Python 3.14 x64 to C:\python\
     pause
     exit /b 1
 )
 
-:: ── 检查 PyInstaller ──
+:: ── Check PyInstaller ──
 "%PYTHON%" -m PyInstaller --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] 未安装 PyInstaller，正在安装...
+    echo [ERROR] PyInstaller not installed, installing now...
     "%PYTHON%" -m pip install pyinstaller
     if errorlevel 1 (
-        echo [ERROR] PyInstaller 安装失败
+        echo [ERROR] PyInstaller installation failed
         pause
         exit /b 1
     )
 )
 
-:: ── 检查 spec 文件 ──
+:: ── Check spec file ──
 if not exist "%SPEC%" (
-    echo [ERROR] 未找到 %SPEC%
+    echo [ERROR] Spec file not found: %SPEC%
     pause
     exit /b 1
 )
 
-:: ── 检查 pybind .pyd ──
+:: ── Check pybind .pyd ──
 set PYD_FOUND=0
 for %%d in (
     "%SCRIPT_DIR%out\build\x64-Release\python"
@@ -55,15 +55,15 @@ for %%d in (
     if exist "%%~d\imulink_sdk_pybind*.pyd" set PYD_FOUND=1
 )
 if "%PYD_FOUND%"=="0" (
-    echo [ERROR] 未找到 imulink_sdk_pybind*.pyd，请先编译 CMake 工程
+    echo [ERROR] imulink_sdk_pybind*.pyd not found, please build the CMake project first
     pause
     exit /b 1
 )
 
-:: ── 运行 PyInstaller ──
+:: ── Run PyInstaller ──
 echo.
-echo [INFO] 开始打包...
-echo [INFO] spec 文件：%SPEC%
+echo [INFO] Starting packaging...
+echo [INFO] Spec file: %SPEC%
 echo.
 
 cd /d "%SCRIPT_DIR%"
@@ -71,14 +71,14 @@ cd /d "%SCRIPT_DIR%"
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] 打包失败，请查看上方错误信息
+    echo [ERROR] Packaging failed, see errors above
     pause
     exit /b 1
 )
 
 echo.
 echo ============================================================
-echo  打包完成：%SCRIPT_DIR%dist\IMU_Viewer\
-echo  运行方式：双击 dist\IMU_Viewer\IMU_Viewer.exe
+echo  Build complete: %SCRIPT_DIR%dist\IMU_Viewer\
+echo  Run: double-click dist\IMU_Viewer\IMU_Viewer.exe
 echo ============================================================
 pause
