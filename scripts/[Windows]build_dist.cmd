@@ -14,8 +14,9 @@ setlocal enabledelayedexpansion
 :: ============================================================
 
 set SCRIPT_DIR=%~dp0
+set ROOT_DIR=%SCRIPT_DIR%..\
 set PYTHON=C:\python\python.exe
-set SPEC=%SCRIPT_DIR%IMU_Viewer.spec
+set SPEC=%ROOT_DIR%IMU_Viewer.spec
 
 :: ── Check Python ──
 if not exist "%PYTHON%" (
@@ -47,10 +48,10 @@ if not exist "%SPEC%" (
 :: ── Check pybind .pyd ──
 set PYD_FOUND=0
 for %%d in (
-    "%SCRIPT_DIR%out\build\x64-Release\python"
-    "%SCRIPT_DIR%out\build\x64-release\python"
-    "%SCRIPT_DIR%out\build\x64-Debug\python"
-    "%SCRIPT_DIR%out\build\x64-debug\python"
+    "%ROOT_DIR%out\build\x64-Release\python"
+    "%ROOT_DIR%out\build\x64-release\python"
+    "%ROOT_DIR%out\build\x64-Debug\python"
+    "%ROOT_DIR%out\build\x64-debug\python"
 ) do (
     if exist "%%~d\imulink_sdk_pybind*.pyd" set PYD_FOUND=1
 )
@@ -66,7 +67,7 @@ echo [INFO] Starting packaging...
 echo [INFO] Spec file: %SPEC%
 echo.
 
-cd /d "%SCRIPT_DIR%"
+cd /d "%ROOT_DIR%"
 "%PYTHON%" -m PyInstaller "%SPEC%" --noconfirm
 
 if errorlevel 1 (
@@ -78,7 +79,7 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
-echo  Build complete: %SCRIPT_DIR%dist\IMU_Viewer\
+echo  Build complete: %ROOT_DIR%dist\IMU_Viewer\
 echo  Run: double-click dist\IMU_Viewer\IMU_Viewer.exe
 echo ============================================================
 pause

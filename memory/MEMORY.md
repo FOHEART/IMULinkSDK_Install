@@ -7,7 +7,7 @@ Windows-first IMU SDK 可视化工具，正在向 Linux/Ubuntu 移植。
 - [IMU_Viewer.py](../IMU_Viewer.py) — 主程序，Python + VTK 3D 可视化
 - [CMakeLists.txt](../CMakeLists.txt) — 构建配置，当前有 WIN32 硬限制
 - [Linux_port_instructions.md](../Linux_port_instructions.md) — Linux 移植完整工作清单
-- [setup_python_libs.cmd](../setup_python_libs.cmd) — Windows Python 依赖安装脚本
+- [[Windows]setup_python_libs.cmd](../scripts/[Windows]setup_python_libs.cmd) — Windows Python 依赖安装脚本
 - [git_pull_latest.sh](../git_pull_latest.sh) — Linux 拉取最新代码脚本（已创建）
 - [git_pull_latest_windows.cmd](../git_pull_latest_windows.cmd) — Windows 拉取最新代码脚本
 

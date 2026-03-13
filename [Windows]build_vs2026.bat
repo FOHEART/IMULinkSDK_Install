@@ -3,7 +3,7 @@ chcp 65001 >nul
 cd /d "%~dp0"
 
 echo [0/4] Installing Python dependencies...
-call "%~dp0[Windows]setup_python_libs.cmd"
+call "%~dp0scripts\[Windows]setup_python_libs.cmd"
 if %errorlevel% neq 0 (
     echo Python dependency installation failed, exit code: %errorlevel%
     pause

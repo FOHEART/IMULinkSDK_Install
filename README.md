@@ -25,8 +25,9 @@ IMULinkSDK_Install/
 ├── CMakeLists.txt                  # CMake 构建配置（支持 Windows / Linux）
 ├── CMakeSettings.json              # Visual Studio CMake 多配置设置
 ├── IMU_Viewer.py                   # 主程序：Python 3D 实时查看器（跨平台）
-├── build_dist.cmd                  # Windows 打包脚本（生成绿色可运行目录）
-├── setup_python_libs.cmd           # Windows：安装 Python 依赖库
+├── scripts/
+│   ├── [Windows]build_dist.cmd     # Windows 打包脚本（生成绿色可运行目录）
+│   └── [Windows]setup_python_libs.cmd  # Windows：安装 Python 依赖库
 ├── setup_python_libs.sh            # Linux：安装 Python 依赖库
 ├── git_pull_latest.sh              # Linux：拉取最新代码脚本
 │
@@ -86,7 +87,7 @@ IMULinkSDK_Install/
 #### 1. 安装 Python 依赖
 
 ```cmd
-setup_python_libs.cmd
+scripts\[Windows]setup_python_libs.cmd
 ```
 
 #### 2. 编译 Debug 版本
@@ -309,7 +310,7 @@ VTK 渲染窗口（3D 长方体实时姿态显示）
 #### 前置条件
 
 - Python 3.10+ x64 安装在 `C:\python\`
-- PyInstaller 已安装（通过 `setup_python_libs.cmd` 安装）
+- PyInstaller 已安装（通过 `scripts\\[Windows]setup_python_libs.cmd` 安装）
 - CMake 工程已编译（存在 `out/build/x64-Debug/python/imulink_sdk_pybind*.pyd`）
 
 #### 打包步骤
@@ -317,7 +318,7 @@ VTK 渲染窗口（3D 长方体实时姿态显示）
 直接双击运行：
 
 ```cmd
-build_dist.cmd
+scripts\[Windows]build_dist.cmd
 ```
 
 脚本会自动完成以下操作：
@@ -342,7 +343,7 @@ dist\IMU_Viewer\
 | 文件 | 说明 |
 |------|------|
 | `IMU_Viewer.spec` | PyInstaller spec 配置文件，控制打包内容 |
-| `build_dist.cmd` | 一键打包脚本 |
+| `scripts\\[Windows]build_dist.cmd` | 一键打包脚本 |
 | `build\IMU_Viewer\` | PyInstaller 中间文件，可删除后重新打包 |
 | `dist\IMU_Viewer\` | 打包输出目录 |
 
